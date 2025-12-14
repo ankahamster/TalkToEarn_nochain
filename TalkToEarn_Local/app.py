@@ -19,7 +19,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_chroma import Chroma
-from langchain_ollama import OllamaEmbeddings, OllamaLLM
+from langchain_community.embeddings import DashScopeEmbeddings
+from langchain_community.chat_models import ChatTongyi
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -34,18 +35,21 @@ TRANSACTIONS_DB_FILE = 'transactions.json'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SHARED_FOLDER, exist_ok=True)
 
-# ==================== Ollama 配置 ====================
-OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://127.0.0.1:11434')
+# ==================== 阿里Qwen API 配置 ====================
+# 从环境变量获取API密钥，支持QWEN_API_KEY和DASHSCOPE_API_KEY
+API_KEY = os.getenv('QWEN_API_KEY', os.getenv('DASHSCOPE_API_KEY', 'your-api-key'))
 
-embeddings = OllamaEmbeddings(
-    model='mxbai-embed-large:latest',
-    base_url=OLLAMA_HOST
+# 初始化Qwen嵌入模型
+embeddings = DashScopeEmbeddings(
+    model="text-embedding-v2",
+    dashscope_api_key=API_KEY
 )
 
-llm = OllamaLLM(
-    model='deepseek-r1:1.5b',
+# 初始化Qwen聊天模型
+llm = ChatTongyi(
+    model="qwen-turbo",
     temperature=0.3,
-    base_url=OLLAMA_HOST
+    dashscope_api_key=API_KEY
 )
 
 vector_store = None
@@ -649,10 +653,11 @@ def llm_based_relevance_check(question, document_content, llm_model):
 
 请判断文档内容是否与用户问题相关，只回答"相关"或"不相关"："""
         
-        response = llm_model.invoke(prompt).strip().lower()
-        print(f"LLM相关性判断结果: '{response}'")
+        response = llm_model.invoke(prompt)
+        response_text = response.content.strip().lower()
+        print(f"LLM相关性判断结果: '{response_text}'")
         
-        return "相关" in response and "不相关" not in response
+        return "相关" in response_text and "不相关" not in response_text
         
     except Exception as e:
         print(f"LLM相关性判断错误: {e}")
@@ -661,9 +666,14 @@ def llm_based_relevance_check(question, document_content, llm_model):
 def hybrid_relevance_check(question, doc, embeddings_model, llm_model):
     semantic_similarity = calculate_semantic_similarity(question, doc.page_content, embeddings_model)
     
+    # 检测是否是概念性问题
+    is_conceptual_question = any(keyword in question for keyword in 
+                                ["什么是", "什么叫", "定义", "概念", "含义", "解释", "为什么"])
+    
     if semantic_similarity > 0.7:
         return True, semantic_similarity
-    elif semantic_similarity > 0.4:
+    elif semantic_similarity > 0.3 or (is_conceptual_question and semantic_similarity > 0.2):
+        # 对于概念性问题，降低阈值到0.2，给予LLM判断的机会
         is_llm_relevant = llm_based_relevance_check(question, doc.page_content, llm_model)
         return is_llm_relevant, semantic_similarity
     else:
@@ -839,38 +849,44 @@ def hybrid_answering_strategy(question, relevant_docs, confidence):
     is_conceptual_question = any(keyword in question for keyword in 
                                 ["什么是", "什么叫", "定义", "概念", "含义", "解释", "为什么"])
     
+    # 将文档内容连接成字符串，避免在f-string中直接使用可能包含反斜杠的内容
+    docs_content = "\n\n".join([doc.page_content for doc in relevant_docs])
+    
     if confidence > 0.7:
         strategy = "high_confidence_rag"
-        prompt = f"""请基于以下上下文信息回答问题：
+        prompt = """请基于以下上下文信息回答问题：
 
 相关上下文：
-{"\n\n".join([doc.page_content for doc in relevant_docs])}
+{}
 
-问题：{question}
+问题：{}
 
 请基于上述上下文提供准确回答："""
+        prompt = prompt.format(docs_content, question)
         
     elif confidence > 0.4:
         strategy = "balanced_hybrid" 
-        prompt = f"""请基于以下上下文信息回答问题，同时可以适当结合你的知识进行补充：
+        prompt = """请基于以下上下文信息回答问题，同时可以适当结合你的知识进行补充：
 
 相关上下文：
-{"\n\n".join([doc.page_content for doc in relevant_docs])}
+{}
 
-问题：{question}
+问题：{}
 
 请优先使用上下文信息，如果上下文信息不足可以结合你的知识进行补充："""
+        prompt = prompt.format(docs_content, question)
         
     else:
         strategy = "model_primary"
-        prompt = f"""请回答以下问题。我的知识库中有一些可能相关的信息，请主要基于你的知识回答，但可以参考这些信息：
+        prompt = """请回答以下问题。我的知识库中有一些可能相关的信息，请主要基于你的知识回答，但可以参考这些信息：
 
 可能相关的信息：
-{"\n\n".join([doc.page_content for doc in relevant_docs])}
+{}
 
-问题：{question}
+问题：{}
 
 请主要基于你的知识进行回答，如果知识库中的信息有帮助可以参考："""
+        prompt = prompt.format(docs_content, question)
     
     return strategy, prompt
 
@@ -888,6 +904,8 @@ def init_vector_store(filepath=None, file_id=None, user_id=None, filename=None):
         return
 
     try:
+        # 处理Windows风格的路径分隔符
+        filepath = filepath.replace('\\', '/')
         print(f"正在处理: {filepath}, 文件ID: {file_id}, 用户ID: {user_id}, 文件名: {filename}")
 
         if filepath.lower().endswith('.pdf'):
@@ -1448,48 +1466,99 @@ def vector_status():
         'status': f'已加载 {count} 个文档块'
     })
 
+def add_content_to_vector_store(content, file_id, user_id, filename):
+    global vector_store
+    
+    try:
+        from langchain_core.documents import Document
+        
+        # 创建Document对象
+        doc = Document(
+            page_content=content,
+            metadata={
+                'file_id': file_id,
+                'user_id': user_id,
+                'filename': filename,
+                'source': filename
+            }
+        )
+        
+        # 分割文档
+        text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=100)
+        docs = text_splitter.split_documents([doc])
+        
+        # 初始化或添加到向量库
+        if vector_store is None:
+            vector_store = Chroma.from_documents(
+                documents=docs,
+                embedding=embeddings,
+                persist_directory='chroma_db'
+            )
+        else:
+            vector_store.add_documents(docs)
+        
+        print(f"成功添加内容到向量库: {filename} (共 {len(docs)} 块)")
+    except Exception as e:
+        print(f"添加内容到向量库失败: {e}")
+        raise
+
 @app.route('/reload_vector_store')
 def reload_vector_store():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': '请先登录'})
     
     try:
-        global vector_store  # 这是正确的位置
+        global vector_store
         
         files = load_files()
-        authorized_files = [file_info for file_info in files.values() if file_info.get('authorize_rag', False)]
+        authorized_files_count = 0
         
-        print(f"找到 {len(authorized_files)} 个授权文件需要重新加载")
+        # 清理旧的向量库
+        import shutil
+        if os.path.exists('chroma_db'):
+            shutil.rmtree('chroma_db')
+        vector_store = None
         
-        if vector_store:
-            import shutil
-            if os.path.exists('chroma_db'):
-                shutil.rmtree('chroma_db')
-            vector_store = None
-        
-        for file_info in authorized_files:
-            file_path = file_info.get('file_path')
-            file_id = None
-            for fid, finfo in files.items():
-                if finfo == file_info:
-                    file_id = fid
-                    break
-            user_id = file_info.get('user_id')
-            filename = file_info.get('filename')
-            
-            if file_path and os.path.exists(file_path) and file_id:
-                try:
-                    add_file_to_vector_store(file_path, file_id, user_id, filename)
-                    print(f"重新加载文件到知识库: {filename}")
-                except Exception as e:
-                    print(f"重新加载文件失败 {filename}: {e}")
+        # 重新加载所有授权的文件
+        for file_id, file_info in files.items():
+            if file_info.get('authorize_rag', False):
+                # 优先使用content字段直接加载
+                content = file_info.get('content')
+                user_id = file_info.get('user_id')
+                filename = file_info.get('filename')
+                
+                if content and file_id:
+                    try:
+                        add_content_to_vector_store(content, file_id, user_id, filename)
+                        authorized_files_count += 1
+                        print(f"通过content加载文件到知识库: {filename} (ID: {file_id})")
+                    except Exception as e:
+                        print(f"content加载失败 {filename}: {e}")
+                else:
+                    # 回退到file_path加载
+                    file_path = file_info.get('file_path')
+                    if file_path:
+                        # 转换Windows路径
+                        file_path = file_path.replace('\\', '/')
+                        # 确保是绝对路径
+                        if not os.path.isabs(file_path):
+                            file_path = os.path.join(os.getcwd(), file_path)
+                        
+                        if os.path.exists(file_path):
+                            try:
+                                add_file_to_vector_store(file_path, file_id, user_id, filename)
+                                authorized_files_count += 1
+                                print(f"通过file_path加载文件到知识库: {filename} (ID: {file_id})")
+                            except Exception as e:
+                                print(f"file_path加载失败 {filename}: {e}")
         
         final_count = vector_store._collection.count() if vector_store else 0
         
         return jsonify({
             'success': True,
-            'message': f'知识库重新加载完成，共 {final_count} 个文档块',
-            'vector_count': final_count
+            'message': f'知识库重新加载完成，共 {authorized_files_count} 个授权文件，{final_count} 个文档块',
+            'vector_count': final_count,
+            'loaded_files': authorized_files_count
         })
         
     except Exception as e:
@@ -1497,6 +1566,7 @@ def reload_vector_store():
             'success': False,
             'message': f'重新加载知识库失败: {str(e)}'
         })
+
     
 @app.route('/health')
 def health_check():

@@ -460,5 +460,148 @@
     "file_id": null,
     "question": "困了怎么办",
     "timestamp": "2025-11-28T00:21:08.197293"
+  },
+  {
+    "id": "6a191483-c412-4e6c-96f6-a504a35ef61f",
+    "type": "spend",
+    "from_user": "hehe",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "天空为什么是蓝色的？",
+    "timestamp": "2025-12-13T23:16:55.304232"
+  },
+  {
+    "id": "03d1a60f-e019-4d62-8e7a-e5bbe4628a6f",
+    "type": "spend",
+    "from_user": "hehe",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "天空为什么是蓝色的？",
+    "timestamp": "2025-12-13T23:26:33.865619"
+  },
+  {
+    "id": "0118588f-5368-4d52-98eb-91a993ef7aa7",
+    "type": "spend",
+    "from_user": "hehe",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "机器人为什么没有爱？",
+    "timestamp": "2025-12-13T23:27:22.718029"
+  },
+  {
+    "id": "71b8dd7e-c3b8-47af-a606-5555424516ad",
+    "type": "spend",
+    "from_user": "hehe",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "为什么人类需要爱？",
+    "timestamp": "2025-12-13T23:28:48.392105"
+  },
+  {
+    "id": "2747ae9f-c940-4e34-8e1f-354182f0c07b",
+    "type": "spend",
+    "from_user": "hehe",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "学编程有什么好处？",
+    "timestamp": "2025-12-13T23:29:55.433336"
+  },
+  {
+    "id": "07ddcc81-89f2-48d0-b1b2-de5fba1d4c93",
+    "type": "spend",
+    "from_user": "test0",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "人类为什么需要爱？",
+    "timestamp": "2025-12-13T23:37:06.388087"
+  },
+  {
+    "id": "66f5d4ba-c68a-4a0e-abfd-262f99f14001",
+    "type": "spend",
+    "from_user": "test0",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "人类为什么需要爱？",
+    "timestamp": "2025-12-13T23:42:05.474818"
+  },
+  {
+    "id": "c08c4afe-80f4-4a1a-affb-2fa9d573bf6f",
+    "type": "spend",
+    "from_user": "test0",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "为什么人类需要爱？",
+    "timestamp": "2025-12-14T10:19:18.946686"
+  },
+  {
+    "id": "7d57d336-09b8-466e-b661-7a8f6ef036fe",
+    "type": "spend",
+    "from_user": "test0",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "学编程有什么好处？",
+    "timestamp": "2025-12-14T10:25:11.545303"
+  },
+  {
+    "id": "c2679807-6751-4c8e-a139-df41c080bdfa",
+    "type": "spend",
+    "from_user": "test0",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "人类为什么需要爱？",
+    "timestamp": "2025-12-14T10:29:58.921654"
+  },
+  {
+    "id": "c4f9915b-dea5-4b42-ab1c-7555abd33471",
+    "type": "spend",
+    "from_user": "test0",
+    "to_user": "system",
+    "amount": 1e-06,
+    "file_owner": null,
+    "file_id": null,
+    "question": "人类为什么需要爱？",
+    "timestamp": "2025-12-14T10:33:52.232891"
+  },
+  {
+    "id": "5f4ef491-9c52-4e54-821c-4fe4b0c359b7",
+    "type": "reward",
+    "from_user": null,
+    "to_user": "test0",
+    "amount": 1e-06,
+    "file_owner": "test0",
+    "file_id": "20251127004057_test0",
+    "question": "人类为什么需要爱？",
+    "timestamp": "2025-12-14T10:33:56.437428"
+  },
+  {
+    "id": "5505bfab-9784-47a1-99c5-fc2bb336d0a6",
+    "type": "reference",
+    "from_user": "test0",
+    "to_user": "test0",
+    "amount": 0.0,
+    "file_owner": "test0",
+    "file_id": "20251127004057_test0",
+    "question": "人类为什么需要爱？",
+    "timestamp": "2025-12-14T10:33:56.437454"
   }
 ]

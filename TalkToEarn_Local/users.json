@@ -1,9 +1,9 @@
 {
   "test0": {
     "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-    "coin_balance": 1.0000090000000001,
-    "total_earned": 1.1000000000000001e-05,
-    "total_spent": 2e-06,
+    "coin_balance": 1.0000040000000006,
+    "total_earned": 1.2000000000000002e-05,
+    "total_spent": 8e-06,
     "registration_time": "2025-11-27T00:40:42.582874",
     "uploaded_files": [
       "20251127004057_test0"
@@ -69,6 +69,15 @@
       "20251127004130_test1",
       "20251127110911_test1"
     ],
+    "referenced_files": []
+  },
+  "hehe": {
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "coin_balance": 0.9999949999999999,
+    "total_earned": 0.0,
+    "total_spent": 4.9999999999999996e-06,
+    "registration_time": "2025-12-13T23:16:02.079869",
+    "uploaded_files": [],
     "referenced_files": []
   }
 }
